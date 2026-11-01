@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History Atlas: Living Tapestry</title>
+<style>
+  :root{
+    --bg:#04060c; --panel:#0a0e18; --panel2:#0d1220; --line:#1c2438;
+    --ink:#e8eaf2; --dim:#9aa3b8; --faint:#5d6580;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;overflow:hidden}
+  #stars{position:fixed;inset:0;
+    background:
+      radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(1px 1px at 68% 8%, rgba(255,255,255,.4), transparent 60%),
+      radial-gradient(1.5px 1.5px at 84% 34%, rgba(255,255,255,.35), transparent 60%),
+      radial-gradient(1px 1px at 33% 71%, rgba(255,255,255,.3), transparent 60%),
+      radial-gradient(1px 1px at 52% 88%, rgba(255,255,255,.45), transparent 60%),
+      radial-gradient(1px 1px at 91% 79%, rgba(255,255,255,.3), transparent 60%),
+      radial-gradient(900px 600px at 50% 42%, #0a1122 0%, var(--bg) 70%);}
+  #graph{position:fixed;inset:0}
+  header{position:fixed;top:0;left:0;right:0;display:flex;align-items:flex-start;gap:18px;
+    padding:14px 18px;pointer-events:none;z-index:5}
+  .brand{pointer-events:auto}
+  .brand h1{margin:0;font-size:19px;letter-spacing:.24em;font-weight:600}
+  .brand h1 span{color:var(--dim);font-weight:400}
+  .brand p{margin:3px 0 0;font-size:12px;color:var(--dim);letter-spacing:.04em}
+  #searchbox{margin-left:auto;pointer-events:auto;display:flex;gap:8px;align-items:center}
+  #search{background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    border-radius:6px;padding:8px 12px;font-size:13px;width:230px;outline:none}
+  #search:focus{border-color:#3b4a6e}
+  #legend{position:fixed;left:18px;bottom:16px;z-index:5;background:rgba(10,14,24,.86);
+    border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:12px;min-width:168px}
+  #legend h3{margin:0 0 7px;font-size:10px;letter-spacing:.22em;color:var(--dim);font-weight:600}
+  #legend .row{display:flex;align-items:center;gap:8px;padding:2px 0;color:var(--dim)}
+  #legend .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  #legend .n{margin-left:auto;color:var(--ink);font-variant-numeric:tabular-nums}
+  #foot{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:4;
+    color:#66738f;font-size:11px;letter-spacing:.03em;text-align:center;pointer-events:none;
+    text-shadow:0 1px 4px #000}
+  #card{position:fixed;top:64px;right:18px;width:320px;max-height:calc(100% - 96px);overflow:auto;
+    background:rgba(10,14,24,.94);border:1px solid var(--line);border-radius:10px;z-index:6;
+    padding:16px 18px;display:none;backdrop-filter:blur(3px)}
+  #card.open{display:block}
+  #card .close{position:absolute;top:8px;right:12px;background:none;border:none;color:var(--dim);
+    font-size:18px;cursor:pointer;line-height:1}
+  #card h2{margin:0 24px 2px 0;font-size:19px;font-weight:600;line-height:1.25}
+  #card .dates{color:var(--dim);font-size:13px;margin-bottom:8px}
+  #card .meta{font-size:12.5px;color:var(--dim);line-height:1.55}
+  #card .meta b{color:var(--ink);font-weight:600}
+  #card a{color:#8fb4ff;text-decoration:none}
+  #card a:hover{text-decoration:underline}
+  #card h4{margin:14px 0 6px;font-size:10.5px;letter-spacing:.2em;color:var(--dim);font-weight:600}
+  .conn{display:flex;align-items:baseline;gap:7px;padding:5px 6px;border-radius:6px;cursor:pointer}
+  .conn:hover{background:#141b2e}
+  .conn .who{font-size:13.5px;color:var(--ink)}
+  .conn .rel{font-size:11px;color:var(--dim)}
+  .badge{font-size:9.5px;letter-spacing:.08em;padding:1px 6px;border-radius:8px;flex:none;
+    text-transform:uppercase;font-weight:600}
+  .badge.stated{background:#17351f;color:#7fd492;border:1px solid #265c33}
+  .badge.derived{background:#3a2c10;color:#e8bd55;border:1px solid #6b5316}
+  #err{position:fixed;inset:0;display:none;place-items:center;z-index:9;color:var(--dim);
+    font-size:14px;text-align:center;padding:30px}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="graph"></div>
+
+<header>
+  <div class="brand">
+    <h1>HISTORY ATLAS <span>/ Living Tapestry</span></h1>
+    <p id="counts">loading…</p>
+  </div>
+  <div id="searchbox">
+    <input id="search" list="names" placeholder="Find a person or entity" autocomplete="off">
+    <datalist id="names"></datalist>
+  </div>
+</header>
+
+<aside id="card">
+  <button class="close" id="cardClose" title="Close">×</button>
+  <h2 id="cName"></h2>
+  <div class="dates" id="cDates"></div>
+  <div class="meta" id="cMeta"></div>
+  <h4 id="cConnHead">TOP CONNECTIONS</h4>
+  <div id="cConns"></div>
+</aside>
+
+<div id="legend"><h3>REGIONS</h3><div id="legendRows"></div></div>
+<div id="foot">Regional context, not nationality. An atlas of Wikipedia's memory of history: stated relations solid provenance, derived relations always labeled.</div>
+<div id="err"><div>This atlas needs WebGL and its data files (data/nodes.js, data/edges.js).<br>Serve the folder with any static server, or open index.html from the app folder.</div></div>
+
+<script src="data/nodes.js"></script>
+<script src="data/edges.js"></script>
+<script src="vendor.js"></script>
+<script>
+const Graph = window.GraphologyGraph;
+const Sigma = window.Sigma;
+
+const REGION_COLORS = {
+  "Mediterranean": "#d9a441",
+  "Europe": "#9a86e0",
+  "Africa": "#e2725b",
+  "Asia": "#3fa7a0",
+  "Americas": "#5b8dd9",
+  "Oceania": "#7fb069",
+  "Multiple/unknown": "#c77fa1",
+};
+const TYPE_LABEL = { father:"Father", mother:"Mother", parent:"Parent", child:"Child",
+  spouse:"Spouse", sibling:"Sibling", partner:"Partner", student_of:"Student of",
+  teacher_of:"Teacher of", employer:"Employer", employee:"Employee",
+  member_of:"Member of", has_member:"Has member", influenced_by:"Influenced by",
+  influenced:"Influenced", same_movement:"Same movement", shared_event:"Shared event",
+  shared_conflict:"Shared conflict" };
+const INVERSE = { father:"child", mother:"child", parent:"child", child:"parent",
+  student_of:"teacher_of", teacher_of:"student_of", employer:"employee", employee:"employer",
+  member_of:"has_member", has_member:"member_of", influenced_by:"influenced",
+  influenced:"influenced_by" };
+
+function fmtYear(y, approx){
+  if (y === null || y === undefined) return "?";
+  const core = y < 0 ? `${-y} BCE` : `${y}`;
+  return approx ? `c. ${core}` : core;
+}
+
+const nodes = window.HA_NODES, edges = window.HA_EDGES;
+if (!nodes || !edges) { document.getElementById("err").style.display = "grid"; throw new Error("data missing"); }
+const byId = new Map(nodes.map(n => [n.id, n]));
+
+const adj = new Map(nodes.map(n => [n.id, []]));
+for (const e of edges) {
+  if (!byId.has(e.from) || !byId.has(e.to)) continue;
+  adj.get(e.from).push({ other: e.to, type: e.type, provenance: e.provenance, rule: e.rule });
+  adj.get(e.to).push({ other: e.from, type: INVERSE[e.type] || e.type, provenance: e.provenance, rule: e.rule });
+}
+
+const graph = new Graph({ multi: true, type: "undirected" });
+for (const n of nodes) {
+  graph.addNode(n.id, {
+    label: n.label, x: n.x, y: n.y,
+    size: Math.min(1.5 + Math.pow(n.degree || 0, 0.5) * 0.8, 11),
+    color: REGION_COLORS[n.region] || REGION_COLORS["Multiple/unknown"],
+  });
+}
+edges.forEach((e, i) => {
+  if (graph.hasNode(e.from) && graph.hasNode(e.to) && e.from !== e.to) {
+    graph.addEdgeWithKey("e" + i, e.from, e.to, {
+      size: 0.6, color: e.provenance === "derived" ? "rgba(232,189,85,0.20)" : "rgba(148,166,205,0.16)",
+    });
+  }
+});
+
+const container = document.getElementById("graph");
+let renderer;
+try {
+  renderer = new Sigma(graph, container, {
+    labelFont: "Avenir Next, Segoe UI, system-ui, sans-serif",
+    labelColor: { color: "#cfd6e6" },
+    labelSize: 12,
+    labelDensity: 0.6,
+    labelRenderedSizeThreshold: 5,
+    hideEdgesOnMove: true,
+    defaultEdgeColor: "rgba(148,166,205,0.16)",
+    minCameraRatio: 0.02,
+    maxCameraRatio: 60,
+  });
+} catch (err) {
+  document.getElementById("err").style.display = "grid";
+  throw err;
+}
+
+// Sigma's camera works in a normalized display space: the graph extent is
+// rescaled to the unit square, so raw layout coordinates must be normalized
+// before being handed to the camera (verified empirically against renders).
+const BOUNDS = (() => {
+  let mnx = 1e18, mxx = -1e18, mny = 1e18, mxy = -1e18;
+  for (const n of nodes) {
+    if (n.x < mnx) mnx = n.x; if (n.x > mxx) mxx = n.x;
+    if (n.y < mny) mny = n.y; if (n.y > mxy) mxy = n.y;
+  }
+  return { mnx, mxx, mny, mxy, w: mxx - mnx, h: mxy - mny };
+})();
+const EXTENT = Math.max(BOUNDS.w, BOUNDS.h);
+const toDisplay = (a) => ({
+  x: (a.x - BOUNDS.mnx) / BOUNDS.w,
+  y: (a.y - BOUNDS.mny) / BOUNDS.h
+});
+
+document.getElementById("counts").textContent =
+  `${nodes.length.toLocaleString()} entities · ${edges.length.toLocaleString()} connections · ${edges.filter(e=>e.provenance==="derived").length.toLocaleString()} derived`;
+
+// legend
+const regionCounts = {};
+for (const n of nodes) regionCounts[n.region] = (regionCounts[n.region] || 0) + 1;
+document.getElementById("legendRows").innerHTML = Object.keys(REGION_COLORS)
+  .filter(r => regionCounts[r])
+  .map(r => `<div class="row"><span class="dot" style="background:${REGION_COLORS[r]}"></span>${r}<span class="n">${regionCounts[r].toLocaleString()}</span></div>`)
+  .join("");
+
+// search
+const dl = document.getElementById("names");
+dl.innerHTML = nodes.slice().sort((a,b)=>b.degree-a.degree).slice(0, 4000)
+  .map(n => `<option value="${n.label.replace(/"/g,"&quot;")}"></option>`).join("");
+const labelToId = new Map();
+for (const n of nodes) if (!labelToId.has(n.label.toLowerCase())) labelToId.set(n.label.toLowerCase(), n.id);
+document.getElementById("search").addEventListener("change", ev => {
+  const id = labelToId.get(ev.target.value.trim().toLowerCase());
+  if (id) select(id, true);
+});
+
+// selection + card
+let selected = null, hovered = null;
+const card = document.getElementById("card");
+function select(id, center) {
+  selected = id;
+  const n = byId.get(id);
+  document.getElementById("cName").textContent = n.label;
+  document.getElementById("cDates").textContent =
+    `${fmtYear(n.birth_year, n.birth_approx)} – ${fmtYear(n.death_year, n.death_approx)}` +
+    (n.birthplace ? ` · b. ${n.birthplace}` : "");
+  const occ = (n.occupations && n.occupations.length ? n.occupations.join(", ") : n.pantheon_occupation || "");
+  document.getElementById("cMeta").innerHTML =
+    `<b>Region:</b> ${n.region}<br>` +
+    (occ ? `<b>Occupations:</b> ${occ}<br>` : "") +
+    (n.fame_hpi ? `<b>Fame (Pantheon HPI):</b> ${n.fame_hpi.toFixed(1)} · ${n.numlangs} Wikipedia languages<br>` : "") +
+    `<b>Connections:</b> ${n.degree}` +
+    (n.wikipedia ? `<br><a href="${n.wikipedia}" target="_blank" rel="noopener">Wikipedia article</a>` : "");
+  const conns = adj.get(id).slice().sort((a, b) => (byId.get(b.other).degree || 0) - (byId.get(a.other).degree || 0));
+  document.getElementById("cConnHead").textContent =
+    `TOP CONNECTIONS (${conns.length})`;
+  document.getElementById("cConns").innerHTML = conns.slice(0, 14).map(c => {
+    const o = byId.get(c.other);
+    const badge = c.provenance === "derived"
+      ? `<span class="badge derived" title="${(c.rule || "derived").replace(/"/g,"&quot;")}">derived</span>`
+      : `<span class="badge stated">stated</span>`;
+    return `<div class="conn" data-id="${c.other}">${badge}<span class="who">${o.label}</span><span class="rel">${TYPE_LABEL[c.type] || c.type}</span></div>`;
+  }).join("") + (conns.length > 14 ? `<div class="conn" style="cursor:default"><span class="rel">+ ${conns.length - 14} more</span></div>` : "");
+  card.querySelectorAll(".conn[data-id]").forEach(el =>
+    el.addEventListener("click", () => select(el.dataset.id, true)));
+  card.classList.add("open");
+  renderer.refresh();
+  if (center) {
+    const a = graph.getNodeAttributes(id);
+    // frame the ego neighborhood: fit node + neighbors bounding box
+    let span = 260;
+    const pts = [a, ...adj.get(id).map(c => graph.getNodeAttributes(c.other))];
+    if (pts.length > 1) {
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 160);
+    }
+    const target = Math.min(0.6, Math.max(0.02, (span * 1.9) / EXTENT));
+    const c = toDisplay(a);
+    renderer.getCamera().animate({ x: c.x, y: c.y, ratio: target }, { duration: 650 });
+  }
+}
+document.getElementById("cardClose").addEventListener("click", () => {
+  selected = null; card.classList.remove("open"); renderer.refresh();
+});
+
+// deep link: index.html#select=Q1048 opens that person's card
+// (deferred two frames so the fitted camera ratio exists before centering)
+const hashMatch = location.hash.match(/select=(Q\d+)/);
+if (hashMatch && byId.has(hashMatch[1])) {
+  requestAnimationFrame(() => requestAnimationFrame(() => select(hashMatch[1], true)));
+}
+
+renderer.on("clickNode", ({ node }) => select(node, false));
+renderer.on("clickStage", () => { selected = null; card.classList.remove("open"); renderer.refresh(); });
+renderer.on("enterNode", ({ node }) => { hovered = node; container.style.cursor = "pointer"; renderer.refresh(); });
+renderer.on("leaveNode", () => { hovered = null; container.style.cursor = "default"; renderer.refresh(); });
+
+renderer.setSetting("nodeReducer", (node, data) => {
+  const focus = hovered || selected;
+  if (!focus) return data;
+  if (node === focus) return { ...data, zIndex: 2 };
+  if (graph.areNeighbors(node, focus)) return data;
+  return { ...data, color: "rgba(90,100,125,0.25)", label: "" };
+});
+renderer.setSetting("edgeReducer", (edge, data) => {
+  const focus = hovered || selected;
+  if (!focus) return data;
+  if (graph.hasExtremity(edge, focus)) return { ...data, size: 1.4 };
+  return { ...data, hidden: true };
+});
+</script>
+</body>
+</html>
