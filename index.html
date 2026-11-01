@@ -184,11 +184,16 @@
 .qlgo{display:inline-block;margin-top:16px;background:#17130c;color:#f4efe4;border:0;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:12px 18px;border-radius:999px;cursor:pointer}
 .qlgo:hover{background:#7c2d12}
 .notechip{margin-left:8px;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8a6d1f;border:1px solid #c9b87a;background:rgba(255,255,255,.6);border-radius:999px;padding:4px 10px;cursor:pointer}
-  .note{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:80;width:min(680px,92vw);max-height:84vh;overflow:auto;background:linear-gradient(160deg,#fbf7ec,#f3ecd9);border:1px solid #ddd2ae;border-radius:14px;padding:30px 34px 32px;color:#17130c;box-shadow:0 50px 130px rgba(0,0,0,.55),0 4px 18px rgba(0,0,0,.3);animation:qlpop .3s cubic-bezier(.2,1.35,.32,1) both}
+  .note{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:80;width:min(430px,92vw);max-height:84vh;background:rgba(251,251,253,.88);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(0,0,0,.09);border-radius:12px;padding:20px 22px 22px;color:#1d1d1f;box-shadow:0 18px 50px rgba(0,0,0,.35),0 2px 10px rgba(0,0,0,.18);animation:qlpop .3s cubic-bezier(.2,1.35,.32,1) both}
+  .note::before{content:'';position:absolute;width:15px;height:15px;background:rgba(251,251,253,.94);transform:rotate(45deg);left:calc(var(--beak-x,50%) - 7px);display:none;z-index:-1}
+  .note[data-pos="below"]::before{display:block;top:-7px;border-left:1px solid rgba(0,0,0,.07);border-top:1px solid rgba(0,0,0,.07)}
+  .note[data-pos="above"]::before{display:block;bottom:-7px;border-right:1px solid rgba(0,0,0,.07);border-bottom:1px solid rgba(0,0,0,.07)}
+  .note .nb{max-height:52vh;overflow:auto}
+  .note .nq{max-height:22vh;overflow:auto}
   @keyframes qlpop{from{opacity:0;transform:translate(-50%,-47%) scale(.84)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
-  .notebd{position:fixed;inset:0;z-index:79;background:rgba(24,18,6,.28)}
+  .notebd{position:fixed;inset:0;z-index:79;background:transparent}
   .notex{position:absolute;top:12px;right:14px;width:30px;height:30px;border-radius:50%;border:1px solid #d5c9a3;background:rgba(255,255,255,.65);color:#57503d;font-size:17px;line-height:1;cursor:pointer;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif}
-  .note .nk{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#8a6d1f}
+  .note .nk{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#6e6e73}
   .note h4{font-family:"Apple Garamond","ITC Garamond Narrow","Cormorant Garamond",Garamond,serif;font-weight:600;font-size:clamp(26px,3vw,36px);transform:scaleX(.85);transform-origin:left center;margin:8px 0 4px;line-height:1.1}
   .note .nq{font-family:"Apple Garamond","ITC Garamond Narrow","Cormorant Garamond",Garamond,serif;font-style:italic;font-weight:300;font-size:20px;line-height:1.4;color:#4c4636}
   .note .nb{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:14.5px;line-height:1.65;color:#33302a;margin-top:10px;max-width:62ch}
@@ -580,15 +585,18 @@
   };
   window.__qlPlace = function(note, rect){
     note._qlRect = rect || null;
-    if(!rect){ note.style.left=''; note.style.top=''; note.style.transform=''; note.style.animation=''; return; }
+    if(!rect){ note.style.left=''; note.style.top=''; note.style.transform=''; note.style.animation=''; note.removeAttribute('data-pos'); return; }
     note.style.animation='none'; note.style.transform='none';
     note.style.visibility='hidden';
     var w=note.offsetWidth, h=note.offsetHeight, vw=window.innerWidth, vh=window.innerHeight, m=8, gap=10;
     var left=rect.left;
     if(left + w > vw - m) left = rect.right - w;
     left=Math.max(m, Math.min(left, Math.max(m, vw - w - m)));
-    var top=rect.bottom + gap;
-    if(top + h > vh - m) top = rect.top - gap - h;
+    var top=rect.bottom + gap, pos='below';
+    if(top + h > vh - m){ top = rect.top - gap - h; pos='above'; }
+    note.setAttribute('data-pos', pos);
+    var bx=Math.max(20, Math.min(rect.left + rect.width/2 - left, w - 20));
+    note.style.setProperty('--beak-x', bx + 'px');
     top=Math.max(m, Math.min(top, Math.max(m, vh - h - m)));
     note.style.left=left+'px'; note.style.top=top+'px';
     note.style.visibility='';
